@@ -22,6 +22,7 @@ import org.slf4j.Marker;
 import org.slf4j.spi.LocationAwareLogger;
 
 /**
+ *
  * @author Clinton Begin
  * @author Eduardo Macarron
  */
@@ -29,6 +30,10 @@ public class Slf4jImpl implements Log {
 
   private Log log;
 
+  /**
+   * 用于做日志兼容问题
+   * @param clazz
+   */
   public Slf4jImpl(String clazz) {
     Logger logger = LoggerFactory.getLogger(clazz);
 

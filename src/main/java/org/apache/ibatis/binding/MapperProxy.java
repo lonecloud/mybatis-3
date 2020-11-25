@@ -30,18 +30,34 @@ import org.apache.ibatis.reflection.ExceptionUtil;
 import org.apache.ibatis.session.SqlSession;
 
 /**
+ * mapper 代理类
  * @author Clinton Begin
- * @author Eduardo Macarron
+ * @author Eduardo Macarro
  */
 public class MapperProxy<T> implements InvocationHandler, Serializable {
 
   private static final long serialVersionUID = -4724728412955527868L;
+  /**
+   * 允许创建代理对象的方法
+   */
   private static final int ALLOWED_MODES = MethodHandles.Lookup.PRIVATE | MethodHandles.Lookup.PROTECTED
       | MethodHandles.Lookup.PACKAGE | MethodHandles.Lookup.PUBLIC;
+  /**
+   * 查找的构造参数
+   */
   private static final Constructor<Lookup> lookupConstructor;
+  /**
+   * 查找的私有方法
+   */
   private static final Method privateLookupInMethod;
   private final SqlSession sqlSession;
+  /**
+   * mapper 对应的接口
+   */
   private final Class<T> mapperInterface;
+  /**
+   * 方法执行器缓存
+   */
   private final Map<Method, MapperMethodInvoker> methodCache;
 
   public MapperProxy(SqlSession sqlSession, Class<T> mapperInterface, Map<Method, MapperMethodInvoker> methodCache) {
@@ -51,6 +67,7 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
   }
 
   static {
+    //添加对JDK9的支持 用于查找private 查找方法
     Method privateLookupIn;
     try {
       privateLookupIn = MethodHandles.class.getMethod("privateLookupIn", Class.class, MethodHandles.Lookup.class);
@@ -60,10 +77,13 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
     privateLookupInMethod = privateLookupIn;
 
     Constructor<Lookup> lookup = null;
+    //判断如果这个方法是null则使用1.8的方法来获取
     if (privateLookupInMethod == null) {
       // JDK 1.8
       try {
+        //获取MethodHandles对应的构造函数
         lookup = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
+        //设置可访问
         lookup.setAccessible(true);
       } catch (NoSuchMethodException e) {
         throw new IllegalStateException(
@@ -94,12 +114,15 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
       // A workaround for https://bugs.openjdk.java.net/browse/JDK-8161372
       // It should be removed once the fix is backported to Java 8 or
       // MyBatis drops Java 8 support. See gh-1929
+
+      //解决JDK ConcurrentHashMap中的computeIfAbsent 的bug
       MapperMethodInvoker invoker = methodCache.get(method);
       if (invoker != null) {
         return invoker;
       }
 
       return methodCache.computeIfAbsent(method, m -> {
+        //判断是否为默认实现防范
         if (m.isDefault()) {
           try {
             if (privateLookupInMethod == null) {

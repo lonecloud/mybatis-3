@@ -31,6 +31,7 @@ import org.apache.ibatis.binding.MapperRegistry;
 import org.apache.ibatis.builder.CacheRefResolver;
 import org.apache.ibatis.builder.IncompleteElementException;
 import org.apache.ibatis.builder.ResultMapResolver;
+import org.apache.ibatis.builder.SqlSourceBuilder;
 import org.apache.ibatis.builder.annotation.MethodResolver;
 import org.apache.ibatis.builder.xml.XMLStatementBuilder;
 import org.apache.ibatis.cache.Cache;
@@ -77,6 +78,7 @@ import org.apache.ibatis.parsing.XNode;
 import org.apache.ibatis.plugin.Interceptor;
 import org.apache.ibatis.plugin.InterceptorChain;
 import org.apache.ibatis.reflection.DefaultReflectorFactory;
+import org.apache.ibatis.reflection.MetaClass;
 import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.reflection.ReflectorFactory;
 import org.apache.ibatis.reflection.factory.DefaultObjectFactory;
@@ -96,45 +98,141 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * 配置类
  * @author Clinton Begin
  */
 public class Configuration {
-
+  /**
+   * 环境配置
+   */
   protected Environment environment;
-
+  /**
+   * 允许在嵌套语句中使用分页（RowBounds）。如果允许使用则设置为 false。
+   */
   protected boolean safeRowBoundsEnabled;
+  /**
+   * 允许在嵌套语句中使用分页（ResultHandler）。如果允许使用则设置为 false。
+   */
   protected boolean safeResultHandlerEnabled = true;
+  /**
+   * 是否将数据库字段_命名(col_a)转换成Java对象驼峰命名方式(colA)
+   * 默认值 false
+   * 实现见下
+   * @see MetaClass#findProperty(java.lang.String, boolean)
+   */
   protected boolean mapUnderscoreToCamelCase;
+  /**
+   * 是否按需加载属性
+   * 默认为false （在 3.4.1 及之前的版本默认值为 true）
+   */
   protected boolean aggressiveLazyLoading;
+  /**
+   * 是否允许单一语句返回多结果集（需要驱动支持）。
+   */
   protected boolean multipleResultSetsEnabled = true;
   protected boolean useGeneratedKeys;
   protected boolean useColumnLabel = true;
+  /**
+   * 全局地开启或关闭配置文件中的所有映射器已经配置的任何缓存。默认开启
+   * @see CachingExecutor
+   */
   protected boolean cacheEnabled = true;
+  /**
+   * 指定当结果集中值为 null 的时候是否调用映射对象的 setter（map 对象时为 put）方法，
+   * 这在依赖于 Map.keySet() 或 null 值初始化的时候比较有用。注意基本类型（int、boolean 等）是不能设置成 null 的。
+   */
   protected boolean callSettersOnNulls;
+  /**
+   * 允许使用构造函数的参数名作为语句参数名称。
+   * 为了使用该特性，你的项目必须采用 Java 8 编译。
+   */
   protected boolean useActualParamName = true;
+  /**
+   * 当返回行的所有列都是空时，MyBatis默认返回 null。
+   * 当开启这个设置时，MyBatis会返回一个空实例。 请注意，它也适用于嵌套的结果集 （如集合或关联）。（新增于 3.4.2）
+   */
   protected boolean returnInstanceForEmptyRow;
+  /**
+   * 是否移除多余空格
+   * @see SqlSourceBuilder#parse(java.lang.String, java.lang.Class, java.util.Map)
+   */
   protected boolean shrinkWhitespacesInSql;
-
+  /**
+   * 日志前缀
+   */
   protected String logPrefix;
+  /**
+   * 日志实现类
+   */
   protected Class<? extends Log> logImpl;
   protected Class<? extends VFS> vfsImpl;
+  /**
+   *
+   */
   protected Class<?> defaultSqlProviderType;
+  /**
+   * 本地缓存作用域
+   * SESSION 作用域
+   * STATEMENT 语句字段
+   */
   protected LocalCacheScope localCacheScope = LocalCacheScope.SESSION;
+  /**
+   * ull对应jdbcType
+   */
   protected JdbcType jdbcTypeForNull = JdbcType.OTHER;
+  /**
+   * 指定哪个对象的方法触发一次延迟加载。默认方法为：equals,clone,hashCode,toString
+   */
   protected Set<String> lazyLoadTriggerMethods = new HashSet<>(Arrays.asList("equals", "clone", "hashCode", "toString"));
+  /**
+   * 设置语句超时间
+   */
   protected Integer defaultStatementTimeout;
   protected Integer defaultFetchSize;
   protected ResultSetType defaultResultSetType;
+  /**
+   * 默认执行器类型：
+   * @see Configuration#newExecutor(org.apache.ibatis.transaction.Transaction, org.apache.ibatis.session.ExecutorType)
+   *     SIMPLE(默认): org.apache.ibatis.executor.SimpleExecutor
+   *     REUSE: org.apache.ibatis.executor.ReuseExecutor
+   *     BATCH: org.apache.ibatis.executor.ResultExtractor
+   */
   protected ExecutorType defaultExecutorType = ExecutorType.SIMPLE;
+  /**
+   * 指定 MyBatis 应如何自动映射列到字段或属性。
+   * NONE 表示关闭自动映射；
+   * PARTIAL 只会自动映射没有定义嵌套结果映射的字段。
+   * FULL 会自动映射任何复杂的结果集（无论是否嵌套）。
+   */
   protected AutoMappingBehavior autoMappingBehavior = AutoMappingBehavior.PARTIAL;
+  /**
+   * 指定发现自动映射目标未知列（或未知属性类型）的行为。
+   * NONE: 不做任何反应
+   * WARNING: 输出警告日志（'org.apache.ibatis.session.AutoMappingUnknownColumnBehavior' 的日志等级必须设置为 WARN）
+   * FAILING: 映射失败 (抛出 SqlSessionException)
+   */
   protected AutoMappingUnknownColumnBehavior autoMappingUnknownColumnBehavior = AutoMappingUnknownColumnBehavior.NONE;
 
   protected Properties variables = new Properties();
+  /**
+   * 默认类反射工厂
+   */
   protected ReflectorFactory reflectorFactory = new DefaultReflectorFactory();
+  /**
+   * 对象创建工厂
+   */
   protected ObjectFactory objectFactory = new DefaultObjectFactory();
+  /**
+   * 对象包装工厂
+   */
   protected ObjectWrapperFactory objectWrapperFactory = new DefaultObjectWrapperFactory();
-
+  /**
+   * 是否懒加载
+   */
   protected boolean lazyLoadingEnabled = false;
+  /**
+   * 默认代理工厂采用ASM
+   */
   protected ProxyFactory proxyFactory = new JavassistProxyFactory(); // #224 Using internal Javassist instead of OGNL
 
   protected String databaseId;
@@ -145,27 +243,69 @@ public class Configuration {
    * @see <a href='https://github.com/mybatis/old-google-code-issues/issues/300'>Issue 300 (google code)</a>
    */
   protected Class<?> configurationFactory;
-
+  /**
+   * mapper注册机
+   */
   protected final MapperRegistry mapperRegistry = new MapperRegistry(this);
+  /**
+   * 拦截器执行器
+   */
   protected final InterceptorChain interceptorChain = new InterceptorChain();
+  /**
+   * TypeHandler注册机
+   */
   protected final TypeHandlerRegistry typeHandlerRegistry = new TypeHandlerRegistry(this);
+  /**
+   * 别名注册机
+   */
   protected final TypeAliasRegistry typeAliasRegistry = new TypeAliasRegistry();
   protected final LanguageDriverRegistry languageRegistry = new LanguageDriverRegistry();
-
+  /**
+   * Mapper映射
+   */
   protected final Map<String, MappedStatement> mappedStatements = new StrictMap<MappedStatement>("Mapped Statements collection")
       .conflictMessageProducer((savedValue, targetValue) ->
           ". please check " + savedValue.getResource() + " and " + targetValue.getResource());
+  /**
+   * 缓存
+   */
   protected final Map<String, Cache> caches = new StrictMap<>("Caches collection");
+  /**
+   * 数据结果集
+   */
   protected final Map<String, ResultMap> resultMaps = new StrictMap<>("Result Maps collection");
+  /**
+   * 参数映射
+   */
   protected final Map<String, ParameterMap> parameterMaps = new StrictMap<>("Parameter Maps collection");
+  /**
+   *  KeyGentertos的StrictMap
+   */
   protected final Map<String, KeyGenerator> keyGenerators = new StrictMap<>("Key Generators collection");
+  /**
+   * mapper.xml的集合
+   */
 
   protected final Set<String> loadedResources = new HashSet<>();
+  /**
+   * SQL片段
+   */
   protected final Map<String, XNode> sqlFragments = new StrictMap<>("XML fragments parsed from previous mappers");
-
+  /**
+   *  解析CacheRef失败的{@link CacheRefResolver} 集合LinkedList
+   */
   protected final Collection<XMLStatementBuilder> incompleteStatements = new LinkedList<>();
+  /**
+   * 未完成的缓存映射
+   */
   protected final Collection<CacheRefResolver> incompleteCacheRefs = new LinkedList<>();
+  /**
+   * 未完成的结果映射解析 集合LinkedList，存放着构建ResultMap时抛出BuilderException异常的resultMapResolver实例
+   */
   protected final Collection<ResultMapResolver> incompleteResultMaps = new LinkedList<>();
+  /**
+   * 未完成的方法映射解析 集合LinkedList
+   */
   protected final Collection<MethodResolver> incompleteMethods = new LinkedList<>();
 
   /*
@@ -180,25 +320,47 @@ public class Configuration {
     this.environment = environment;
   }
 
+  /**
+   * 注册各种别名
+   */
   public Configuration() {
+    /**
+     * 事务工厂
+     */
+    //JDBC事务工厂
     typeAliasRegistry.registerAlias("JDBC", JdbcTransactionFactory.class);
+    //事务工厂
     typeAliasRegistry.registerAlias("MANAGED", ManagedTransactionFactory.class);
-
+    //jndi的数据源
     typeAliasRegistry.registerAlias("JNDI", JndiDataSourceFactory.class);
+    //生产具有简单，同步，线程安全数据库连接池的数据源工厂
     typeAliasRegistry.registerAlias("POOLED", PooledDataSourceFactory.class);
+    //生产无连接池数据源（即每次获取请求都简单的打开和关闭连接）工厂
     typeAliasRegistry.registerAlias("UNPOOLED", UnpooledDataSourceFactory.class);
-
+    /**
+     * 缓存策略
+     */
+    //永久缓存 Cache接口实现类,里面就是维护着一个HashMap
     typeAliasRegistry.registerAlias("PERPETUAL", PerpetualCache.class);
+    //使用先进先出缓存策略的缓存装饰类
     typeAliasRegistry.registerAlias("FIFO", FifoCache.class);
+    //LRU
     typeAliasRegistry.registerAlias("LRU", LruCache.class);
+    //软引用回收策略 缓存装饰类
     typeAliasRegistry.registerAlias("SOFT", SoftCache.class);
+    //弱引用回收策略 缓存装饰类
     typeAliasRegistry.registerAlias("WEAK", WeakCache.class);
 
     typeAliasRegistry.registerAlias("DB_VENDOR", VendorDatabaseIdProvider.class);
-
+    /**
+     * XML语言驱动
+     * Mybatis默认XML驱动类为XMLLanguageDriver，其主要作用于解析select|update|insert|delete节点为完整的SQL语句。
+     */
     typeAliasRegistry.registerAlias("XML", XMLLanguageDriver.class);
     typeAliasRegistry.registerAlias("RAW", RawLanguageDriver.class);
-
+    /**
+     * 日志相关
+     */
     typeAliasRegistry.registerAlias("SLF4J", Slf4jImpl.class);
     typeAliasRegistry.registerAlias("COMMONS_LOGGING", JakartaCommonsLoggingImpl.class);
     typeAliasRegistry.registerAlias("LOG4J", Log4jImpl.class);
@@ -206,11 +368,16 @@ public class Configuration {
     typeAliasRegistry.registerAlias("JDK_LOGGING", Jdk14LoggingImpl.class);
     typeAliasRegistry.registerAlias("STDOUT_LOGGING", StdOutImpl.class);
     typeAliasRegistry.registerAlias("NO_LOGGING", NoLoggingImpl.class);
-
+    /**
+     * 动态代理工厂，针对懒加载的
+     */
+    //CGLIB代理工厂
     typeAliasRegistry.registerAlias("CGLIB", CglibProxyFactory.class);
+    //Javassist代理工厂
     typeAliasRegistry.registerAlias("JAVASSIST", JavassistProxyFactory.class);
-
+    //设置默认的语言驱动为XMLLanguagerDriver
     languageRegistry.setDefaultDriverClass(XMLLanguageDriver.class);
+    ///注册RawLanguageDriver语言驱动
     languageRegistry.register(RawLanguageDriver.class);
   }
 
@@ -226,6 +393,10 @@ public class Configuration {
     return logImpl;
   }
 
+  /**
+   * 设置对应的日志实现类，为了统一日志调用
+   * @param logImpl
+   */
   public void setLogImpl(Class<? extends Log> logImpl) {
     if (logImpl != null) {
       this.logImpl = logImpl;
@@ -245,6 +416,7 @@ public class Configuration {
   }
 
   /**
+   * 用于指定SQL 语句由谁提供 方便与SelectProvider使用
    * Gets an applying type when omit a type on sql provider annotation(e.g. {@link org.apache.ibatis.annotations.SelectProvider}).
    *
    * @return the default type for sql provider annotation
@@ -255,6 +427,7 @@ public class Configuration {
   }
 
   /**
+   * 设置默认的SQL提供
    * Sets an applying type when omit a type on sql provider annotation(e.g. {@link org.apache.ibatis.annotations.SelectProvider}).
    *
    * @param defaultSqlProviderType
@@ -536,6 +709,7 @@ public class Configuration {
   }
 
   /**
+   * 默认枚举处理器
    * Set a default {@link TypeHandler} class for {@link Enum}.
    * A default {@link TypeHandler} is {@link org.apache.ibatis.type.EnumTypeHandler}.
    * @param typeHandler a type handler class for {@link Enum}
@@ -637,25 +811,42 @@ public class Configuration {
     return getDefaultScriptingLanguageInstance();
   }
 
+  /**
+   * 构建Object的元对象
+   * @param object
+   * @return
+   */
   public MetaObject newMetaObject(Object object) {
     return MetaObject.forObject(object, objectFactory, objectWrapperFactory, reflectorFactory);
   }
 
+  /**
+   * 构建参数处理器
+   * @param mappedStatement Mapper.xml文件的select,delete,update,insert这些DML标签的封装类
+   * @param parameterObject 参数对象
+   * @param boundSql 参数映射与可执行SQL封装类对象
+   * @return
+   */
   public ParameterHandler newParameterHandler(MappedStatement mappedStatement, Object parameterObject, BoundSql boundSql) {
     ParameterHandler parameterHandler = mappedStatement.getLang().createParameterHandler(mappedStatement, parameterObject, boundSql);
+    //添加参数拦截器
     parameterHandler = (ParameterHandler) interceptorChain.pluginAll(parameterHandler);
     return parameterHandler;
   }
 
   public ResultSetHandler newResultSetHandler(Executor executor, MappedStatement mappedStatement, RowBounds rowBounds, ParameterHandler parameterHandler,
       ResultHandler resultHandler, BoundSql boundSql) {
+    //创建默认结果处理器
     ResultSetHandler resultSetHandler = new DefaultResultSetHandler(executor, mappedStatement, parameterHandler, resultHandler, boundSql, rowBounds);
+    //返回值拦截
     resultSetHandler = (ResultSetHandler) interceptorChain.pluginAll(resultSetHandler);
     return resultSetHandler;
   }
 
   public StatementHandler newStatementHandler(Executor executor, MappedStatement mappedStatement, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
+    //语句处理器
     StatementHandler statementHandler = new RoutingStatementHandler(executor, mappedStatement, parameterObject, rowBounds, resultHandler, boundSql);
+    //参数拦截
     statementHandler = (StatementHandler) interceptorChain.pluginAll(statementHandler);
     return statementHandler;
   }
@@ -664,10 +855,20 @@ public class Configuration {
     return newExecutor(transaction, defaultExecutorType);
   }
 
+  /**
+   * 获取信息的执行器
+   * @param transaction
+   * @param executorType
+   * @return
+   */
   public Executor newExecutor(Transaction transaction, ExecutorType executorType) {
+    //判断空设置默认值
     executorType = executorType == null ? defaultExecutorType : executorType;
+    //默认值为空则设置默认SIMPLE
     executorType = executorType == null ? ExecutorType.SIMPLE : executorType;
     Executor executor;
+    //创建执行器
+    // 批量&重用
     if (ExecutorType.BATCH == executorType) {
       executor = new BatchExecutor(this, transaction);
     } else if (ExecutorType.REUSE == executorType) {
@@ -675,9 +876,12 @@ public class Configuration {
     } else {
       executor = new SimpleExecutor(this, transaction);
     }
+    //是否使用缓存
     if (cacheEnabled) {
+      //包装缓存执行器
       executor = new CachingExecutor(executor);
     }
+    //插件拦截
     executor = (Executor) interceptorChain.pluginAll(executor);
     return executor;
   }
@@ -722,9 +926,15 @@ public class Configuration {
     return caches.containsKey(id);
   }
 
+  /**
+   * 将ResultMap放入resultMaps中
+   * @param rm
+   */
   public void addResultMap(ResultMap rm) {
     resultMaps.put(rm.getId(), rm);
+    //检查是否有自身的ResultMap
     checkLocallyForDiscriminatedNestedResultMaps(rm);
+    //检查全局的ResultMap依赖
     checkGloballyForDiscriminatedNestedResultMaps(rm);
   }
 
@@ -769,7 +979,9 @@ public class Configuration {
   }
 
   public Collection<String> getMappedStatementNames() {
+    //构建所有的语句
     buildAllStatements();
+    //返回对应的数据
     return mappedStatements.keySet();
   }
 
@@ -935,14 +1147,20 @@ public class Configuration {
 
   // Slow but a one time cost. A better solution is welcome.
   protected void checkGloballyForDiscriminatedNestedResultMaps(ResultMap rm) {
+    //是否有多层嵌套ResultMap
     if (rm.hasNestedResultMaps()) {
       for (Map.Entry<String, ResultMap> entry : resultMaps.entrySet()) {
         Object value = entry.getValue();
+        //判断是否为ResultMap
         if (value instanceof ResultMap) {
           ResultMap entryResultMap = (ResultMap) value;
+          //判断是否存在依赖
           if (!entryResultMap.hasNestedResultMaps() && entryResultMap.getDiscriminator() != null) {
+            //获取鉴别器映射
             Collection<String> discriminatedResultMapNames = entryResultMap.getDiscriminator().getDiscriminatorMap().values();
+            //包含
             if (discriminatedResultMapNames.contains(rm.getId())) {
+              //设置对应Result有对应的结果集
               entryResultMap.forceNestedResultMaps();
             }
           }

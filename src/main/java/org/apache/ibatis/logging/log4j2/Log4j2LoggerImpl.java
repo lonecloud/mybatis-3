@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
 /**
+ * Log4j2实现类
  * @author Eduardo Macarron
  */
 public class Log4j2LoggerImpl implements Log {
