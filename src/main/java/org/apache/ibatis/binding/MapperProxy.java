@@ -82,6 +82,7 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
       // JDK 1.8
       try {
         //获取MethodHandles对应的构造函数
+        //Lookup(Class<?> lookupClass, int allowedModes)
         lookup = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
         //设置可访问
         lookup.setAccessible(true);
@@ -99,7 +100,9 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     try {
+      //判断是否为InvokeHandler执行器
       if (Object.class.equals(method.getDeclaringClass())) {
+        //执行对应方法
         return method.invoke(this, args);
       } else {
         return cachedInvoker(method).invoke(proxy, method, args, sqlSession);
@@ -122,9 +125,10 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
       }
 
       return methodCache.computeIfAbsent(method, m -> {
-        //判断是否为默认实现防范
+        //判断是否为默认实现
         if (m.isDefault()) {
           try {
+            //JDK9
             if (privateLookupInMethod == null) {
               return new DefaultMethodInvoker(getMethodHandleJava8(method));
             } else {
@@ -154,10 +158,14 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
 
   private MethodHandle getMethodHandleJava8(Method method)
       throws IllegalAccessException, InstantiationException, InvocationTargetException {
+    //获取对应类
     final Class<?> declaringClass = method.getDeclaringClass();
     return lookupConstructor.newInstance(declaringClass, ALLOWED_MODES).unreflectSpecial(method, declaringClass);
   }
 
+  /**
+   * Mapper方法执行器
+   */
   interface MapperMethodInvoker {
     Object invoke(Object proxy, Method method, Object[] args, SqlSession sqlSession) throws Throwable;
   }
@@ -186,6 +194,7 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args, SqlSession sqlSession) throws Throwable {
+      //使用JDK7新方法执行对应的参数
       return methodHandle.bindTo(proxy).invokeWithArguments(args);
     }
   }
