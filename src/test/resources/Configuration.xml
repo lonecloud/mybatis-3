@@ -7,9 +7,9 @@
       <transactionManager type="JDBC"/>
       <dataSource type="POOLED">
         <property name="driver" value="com.mysql.jdbc.Driver"/>
-        <property name="url" value="jdbc:mysql://10.7.12.4:3306/lfBase?useUnicode=true"/>
-        <property name="username" value="lfBase"/>
-        <property name="password" value="eKffQV6wbh3sfQuFIG6M"/>
+        <property name="url" value="jdbc:mysql://localhost:3306/auth?useUnicode=true&amp;serverTimezone=UTC"/>
+        <property name="username" value="root"/>
+        <property name="password" value="123456"/>
       </dataSource>
     </environment>
   </environments>

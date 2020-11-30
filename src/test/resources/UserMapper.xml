@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.apache.ibatis.example.UserMapper">
+
+  <select id="query" resultType="map" parameterType="int">
+    select id, shop_lng,shop_lat from table_demo t where
+    CAST(t.shop_lng AS DECIMAL(10,6))&lt;= #{maxLng,jdbcType=DECIMAL}
+    and
+    CAST(t.shop_lng AS DECIMAL(10,6))&gt;= #{minLng,jdbcType=DECIMAL}
+    and
+    CAST(t.shop_lat AS DECIMAL(10,6))&lt;= #{maxLat,jdbcType=DECIMAL}
+    and
+    CAST(t.shop_lat AS DECIMAL(10,6))&gt;= #{minLat,jdbcType=DECIMAL}
+    limit #{limitSize}
+  </select>
+</mapper>

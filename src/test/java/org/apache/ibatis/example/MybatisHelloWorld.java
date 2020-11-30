@@ -7,6 +7,8 @@ import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * @author lonecloud
@@ -17,7 +19,7 @@ import java.io.Reader;
  */
 public class MybatisHelloWorld {
   public static void main(String[] args) {
-    String resource = "org/mybatis/internal/example/Configuration.xml";
+    String resource = "Configuration.xml";
     Reader reader;
     try {
       reader = Resources.getResourceAsReader(resource);
@@ -25,8 +27,11 @@ public class MybatisHelloWorld {
 
       SqlSession session = sqlMapper.openSession();
       try {
-        User user = (User) session.selectOne("org.mybatis.internal.example.mapper.UserMapper.getUser", 1);
-        System.out.println(user.getLfPartyId() + "," + user.getPartyName());
+        UserMapper mapper = session.getMapper(UserMapper.class);
+        List list = mapper.query(
+          new BigDecimal("120.003446"), new BigDecimal("120.003446"), new BigDecimal("30.280146"), new BigDecimal("30.280146"), 100
+        );
+        System.out.println(list);
       } finally {
         session.close();
       }

@@ -46,12 +46,22 @@ import org.apache.ibatis.session.SqlSession;
  * @author Clinton Begin
  */
 public class DefaultSqlSession implements SqlSession {
-
+  /**
+   * 配置文件
+   */
   private final Configuration configuration;
+  /**
+   * 执行器
+   */
   private final Executor executor;
-
+  /**
+   * 是否自动提交
+   */
   private final boolean autoCommit;
   private boolean dirty;
+  /**
+   * 游标List
+   */
   private List<Cursor<?>> cursorList;
 
   public DefaultSqlSession(Configuration configuration, Executor executor, boolean autoCommit) {
@@ -74,6 +84,11 @@ public class DefaultSqlSession implements SqlSession {
   public <T> T selectOne(String statement, Object parameter) {
     // Popular vote was to return null on 0 results and throw exception on too many.
     List<T> list = this.selectList(statement, parameter);
+    /**
+     * 1.判断是否=1 则返回第一条元素
+     * 2.大于1则抛异常
+     * 3. 返回空
+     */
     if (list.size() == 1) {
       return list.get(0);
     } else if (list.size() > 1) {
@@ -143,7 +158,9 @@ public class DefaultSqlSession implements SqlSession {
   @Override
   public <E> List<E> selectList(String statement, Object parameter, RowBounds rowBounds) {
     try {
+      //从configuration中获取查询语句对象
       MappedStatement ms = configuration.getMappedStatement(statement);
+      //执行器执行查询方法
       return executor.query(ms, wrapCollection(parameter), rowBounds, Executor.NO_RESULT_HANDLER);
     } catch (Exception e) {
       throw ExceptionFactory.wrapException("Error querying database.  Cause: " + e, e);
@@ -165,7 +182,9 @@ public class DefaultSqlSession implements SqlSession {
   @Override
   public void select(String statement, Object parameter, RowBounds rowBounds, ResultHandler handler) {
     try {
+      //从configuration中获取查询语句对象
       MappedStatement ms = configuration.getMappedStatement(statement);
+      //执行器执行查询方法
       executor.query(ms, wrapCollection(parameter), rowBounds, handler);
     } catch (Exception e) {
       throw ExceptionFactory.wrapException("Error querying database.  Cause: " + e, e);
