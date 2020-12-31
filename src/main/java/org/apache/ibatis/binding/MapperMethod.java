@@ -39,6 +39,7 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.session.SqlSession;
 
 /**
+ * Mapper方法执行
  * @author Clinton Begin
  * @author Eduardo Macarron
  * @author Lasse Voss
@@ -217,20 +218,31 @@ public class MapperMethod {
   }
 
   public static class SqlCommand {
-
+    /**
+     * 方法名称
+     */
     private final String name;
+    /**
+     * SQL执行类型
+     */
     private final SqlCommandType type;
 
     public SqlCommand(Configuration configuration, Class<?> mapperInterface, Method method) {
+      //获取方法名称
       final String methodName = method.getName();
+      //获取
       final Class<?> declaringClass = method.getDeclaringClass();
+      //获取statement对象
       MappedStatement ms = resolveMappedStatement(mapperInterface, methodName, declaringClass,
           configuration);
+      //判断是否为空
       if (ms == null) {
+        //判断是否为Flush
         if (method.getAnnotation(Flush.class) != null) {
           name = null;
           type = SqlCommandType.FLUSH;
         } else {
+          //抛出未绑定
           throw new BindingException("Invalid bound statement (not found): "
               + mapperInterface.getName() + "." + methodName);
         }
@@ -251,14 +263,27 @@ public class MapperMethod {
       return type;
     }
 
+    /**
+     * 递归获取statement
+     * @param mapperInterface
+     * @param methodName
+     * @param declaringClass
+     * @param configuration
+     * @return
+     */
     private MappedStatement resolveMappedStatement(Class<?> mapperInterface, String methodName,
         Class<?> declaringClass, Configuration configuration) {
+      //拼接一个Id 使用的是接口名+方法名
       String statementId = mapperInterface.getName() + "." + methodName;
+      //判断statement是否存在
       if (configuration.hasStatement(statementId)) {
+        //返回statement
         return configuration.getMappedStatement(statementId);
+        //递归返回值
       } else if (mapperInterface.equals(declaringClass)) {
         return null;
       }
+      //递归获取statement
       for (Class<?> superInterface : mapperInterface.getInterfaces()) {
         if (declaringClass.isAssignableFrom(superInterface)) {
           MappedStatement ms = resolveMappedStatement(superInterface, methodName,

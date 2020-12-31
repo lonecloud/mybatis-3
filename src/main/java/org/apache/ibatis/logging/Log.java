@@ -20,19 +20,43 @@ package org.apache.ibatis.logging;
  * @author Clinton Begin
  */
 public interface Log {
-
+  /**
+   * 判断debug是否打开
+   * @return
+   */
   boolean isDebugEnabled();
 
+  /**
+   * 判断trance是否打开
+   * @return
+   */
   boolean isTraceEnabled();
 
+  /**
+   * 错误日志打印
+   * @param s
+   * @param e
+   */
   void error(String s, Throwable e);
 
   void error(String s);
 
+  /**
+   * debug日志打印
+   * @param s
+   */
   void debug(String s);
 
+  /**
+   * trance日志打印
+   * @param s
+   */
   void trace(String s);
 
+  /**
+   * warn 日志打印
+   * @param s
+   */
   void warn(String s);
 
 }

@@ -28,11 +28,16 @@ public final class LogFactory {
    * Marker to be used by logging implementations that support markers.
    */
   public static final String MARKER = "MYBATIS";
-
+  /**
+   * 日志系统构造函数
+   */
   private static Constructor<? extends Log> logConstructor;
 
   static {
     //尝试加载实现类
+    /**
+     * slf4j>commonLog>log4j2>log4j>jdk>noLog
+     */
     tryImplementation(LogFactory::useSlf4jLogging);
     tryImplementation(LogFactory::useCommonsLogging);
     tryImplementation(LogFactory::useLog4J2Logging);
@@ -46,9 +51,15 @@ public final class LogFactory {
   }
 
   public static Log getLog(Class<?> clazz) {
+    //获取日志打印
     return getLog(clazz.getName());
   }
 
+  /**
+   * 根据类名获取对应的日志实例
+   * @param logger
+   * @return
+   */
   public static Log getLog(String logger) {
     try {
       return logConstructor.newInstance(logger);
@@ -57,6 +68,10 @@ public final class LogFactory {
     }
   }
 
+  /**
+   * 设置个性化日志
+   * @param clazz
+   */
   public static synchronized void useCustomLogging(Class<? extends Log> clazz) {
     setImplementation(clazz);
   }
@@ -89,6 +104,10 @@ public final class LogFactory {
     setImplementation(org.apache.ibatis.logging.nologging.NoLoggingImpl.class);
   }
 
+  /**
+   * 尝试加载实现类
+   * @param runnable
+   */
   private static void tryImplementation(Runnable runnable) {
     if (logConstructor == null) {
       try {
@@ -99,6 +118,10 @@ public final class LogFactory {
     }
   }
 
+  /**
+   * 设置实现类方法
+   * @param implClass
+   */
   private static void setImplementation(Class<? extends Log> implClass) {
     try {
       //获取Log默认String 的构造参数
