@@ -100,11 +100,13 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     try {
-      //判断是否为InvokeHandler执行器
+      //判断是否为InvokeHandler执行器，如不是则直接执行
       if (Object.class.equals(method.getDeclaringClass())) {
         //执行对应方法
         return method.invoke(this, args);
+        //说明是需要mybatis方法
       } else {
+        //缓存执行
         return cachedInvoker(method).invoke(proxy, method, args, sqlSession);
       }
     } catch (Throwable t) {

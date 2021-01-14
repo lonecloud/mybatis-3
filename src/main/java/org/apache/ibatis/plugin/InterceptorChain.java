@@ -26,7 +26,15 @@ public class InterceptorChain {
 
   private final List<Interceptor> interceptors = new ArrayList<>();
 
+  /**
+   * 注册执行器执行
+   * @param target
+   * @return
+   */
   public Object pluginAll(Object target) {
+    /**
+     * 循环遍历执行器中的plugin方法
+     */
     for (Interceptor interceptor : interceptors) {
       target = interceptor.plugin(target);
     }

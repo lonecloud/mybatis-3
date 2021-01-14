@@ -40,6 +40,7 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.session.SqlSession;
 
 /**
+ * 默认SqlSession
  * The default implementation for {@link SqlSession}.
  * Note that this class is not Thread-Safe.
  *
