@@ -58,6 +58,7 @@ public class MapperMethod {
   public Object execute(SqlSession sqlSession, Object[] args) {
     Object result;
     switch (command.getType()) {
+      //判断插入
       case INSERT: {
         Object param = method.convertArgsToSqlCommandParam(args);
         result = rowCountResult(sqlSession.insert(command.getName(), param));
@@ -283,7 +284,7 @@ public class MapperMethod {
       } else if (mapperInterface.equals(declaringClass)) {
         return null;
       }
-      //递归获取statement
+      //递归获取statement（实现接口继承）
       for (Class<?> superInterface : mapperInterface.getInterfaces()) {
         if (declaringClass.isAssignableFrom(superInterface)) {
           MappedStatement ms = resolveMappedStatement(superInterface, methodName,

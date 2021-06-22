@@ -50,6 +50,9 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
    * 查找的私有方法
    */
   private static final Method privateLookupInMethod;
+  /**
+   * SqlSession执行器
+   */
   private final SqlSession sqlSession;
   /**
    * mapper 对应的接口
@@ -127,8 +130,9 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
       }
 
       return methodCache.computeIfAbsent(method, m -> {
-        //判断是否为默认实现
+        //判断是否为default方法
         if (m.isDefault()) {
+          //使用default方法执行器加载
           try {
             //JDK9
             if (privateLookupInMethod == null) {
@@ -194,6 +198,9 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
     }
   }
 
+  /**
+   * default方法执行器
+   */
   private static class DefaultMethodInvoker implements MapperMethodInvoker {
     private final MethodHandle methodHandle;
 
